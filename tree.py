@@ -162,7 +162,7 @@ class ScanTree:
             objects.append(object_)
             offset += object_.packed_size
 
-        return cls(magic, root_node_instance_ID, unknown, object_count, tuple(objects))
+        return cls(magic.decode("ascii"), root_node_instance_ID, unknown, object_count, tuple(objects))
 
     @property
     def packed_size(self) -> int:
@@ -170,7 +170,7 @@ class ScanTree:
 
     def packed(self) -> bytes:
         return b"".join((
-            self._struct.pack(self.magic, self.root_node_instance_ID, self.unknown, self.object_count),
+            self._struct.pack(self.magic.encode("ascii"), self.root_node_instance_ID, self.unknown, self.object_count),
             *(object_.packed() for object_ in self.objects),
         ))
 
