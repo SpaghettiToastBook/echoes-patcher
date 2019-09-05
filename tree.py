@@ -36,6 +36,7 @@ class EditorProperties(PropertyStruct):
     translation: Vector
     rotation: Vector
     translation: Vector
+    scale: Vector
     active: bool
 
     def __post_init__(self):
