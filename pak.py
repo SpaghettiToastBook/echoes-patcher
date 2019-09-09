@@ -199,7 +199,7 @@ class PAK:
             resources=(*self.resources[:index], new_resource, *self.resources[index:])
         )
 
-    def with_resource_appended(self, asset_id: int, new_resource):
+    def with_resource_appended(self, asset_ID: int, new_resource):
         return self.with_resource_inserted(-1, asset_ID, new_resource)
 
     def with_resource_removed(self, index: int):
