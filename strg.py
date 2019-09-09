@@ -209,14 +209,13 @@ class STRG:
     def get_string_table_by_language_ID(self, language_ID: str) -> STRGStringTable:
         return self.string_tables[self._language_ID_to_index_map[language_ID]]
 
-    def with_string_table_replaced(self, language_ID: str, new_string_table: STRGStringTable):
-        table_index = self._language_ID_to_index_map[language_ID]
-        old_language_table = self.language_tables[table_index]
+    def with_string_table_replaced(self, index: int, new_string_table: STRGStringTable):
+        old_language_table = self.language_tables[index]
         new_language_table = dataclasses.replace(old_language_table, strings_size=new_string_table.packed_size)
 
         size_diff = new_language_table.strings_size - old_language_table.strings_size
-        new_language_tables = [*self.language_tables[:table_index], new_language_table]
-        for language_table in self.language_tables[table_index+1:]:
+        new_language_tables = [*self.language_tables[:index], new_language_table]
+        for language_table in self.language_tables[index+1:]:
             new_language_tables.append(
                 dataclasses.replace(language_table, strings_offset=language_table.strings_size+size_diff)
             )
@@ -224,5 +223,9 @@ class STRG:
         return dataclasses.replace(
             self,
             language_tables=tuple(new_language_tables),
-            string_tables=(*self.string_tables[:table_index], new_string_table, *self.string_tables[table_index+1:]),
+            string_tables=(*self.string_tables[:index], new_string_table, *self.string_tables[index+1:]),
         )
+
+    def with_string_table_replaced_by_language_ID(self, language_ID: str, new_string_table: STRGStringTable):
+        index = self._language_ID_to_index_map[language_ID]
+        return self.with_string_table_replaced(index, new_string_table)
