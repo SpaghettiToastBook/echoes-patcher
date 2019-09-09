@@ -174,10 +174,10 @@ class PAK:
         return self.resources[self._asset_ID_to_index_map[asset_ID]]
 
     def with_resource_inserted(self, index: int, asset_ID: int, new_resource):
-        if index < self.resource_count:
-            new_resource_table_offset = self.resource_tables[index].offset
-        else:
+        if index == self.resource_count:
             new_resource_table_offset = self.resource_tables[-1].offset + self.resource_tables[-1].size
+        else:
+            new_resource_table_offset = self.resource_tables[index].offset
         new_resource_table = PAKResourceTable(
             False, # TODO: Support compressing resources
             new_resource.asset_type,
@@ -200,7 +200,7 @@ class PAK:
         )
 
     def with_resource_appended(self, asset_ID: int, new_resource):
-        return self.with_resource_inserted(-1, asset_ID, new_resource)
+        return self.with_resource_inserted(self.resource_count, asset_ID, new_resource)
 
     def with_resource_removed(self, index: int):
         removed_resource = self.resources[index]
