@@ -67,7 +67,7 @@ class PAKResourceTable:
 
 @dataclasses.dataclass(frozen=True)
 class PAKUnimplementedResource:
-    data: bytes
+    data: bytes = dataclasses.field(repr=False)
 
     @classmethod
     def from_packed(cls, packed: bytes):
@@ -89,10 +89,10 @@ class PAK:
     minor_version: int
     unused: int
     named_resource_count: int
-    named_resource_tables: tuple
+    named_resource_tables: tuple = dataclasses.field(repr=False)
     resource_count: int
-    resource_tables: tuple
-    resources: tuple
+    resource_tables: tuple = dataclasses.field(repr=False)
+    resources: tuple = dataclasses.field(repr=False)
 
     asset_classes = {
         "DUMB": DUMB,

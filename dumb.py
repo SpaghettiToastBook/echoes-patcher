@@ -9,7 +9,7 @@ __all__ = ("DUMB",)
 class DUMB:
     asset_type = "DUMB"
 
-    data: bytes
+    data: bytes = dataclasses.field(repr=False)
 
     @classmethod
     def from_packed(cls, packed: bytes):
