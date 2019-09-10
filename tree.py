@@ -7,7 +7,7 @@ import struct
 
 from scly_common import Property, PropertyStruct, ScriptObject
 
-__all__ = ("ScanTree",)
+__all__ = ("EditorProperties", "ScannableParameters", "SCND", "SCSN", "SCIN", "SCSL", "SCMN", "ScanTree")
 
 
 @dataclasses.dataclass(frozen=True)
