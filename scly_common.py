@@ -88,6 +88,10 @@ class PropertyStruct:
             _subproperty_ID_to_index_map[subproperty.ID] = i
         object.__setattr__(self, "_subproperty_ID_to_index_map", _subproperty_ID_to_index_map)
 
+    def _set_fields_from_subproperty_data(self, *field_tuples) -> None:
+        for field_name, subproperty_ID, conversion in field_tuples:
+            object.__setattr__(self, field_name, conversion(self.get_subproperty_by_ID(subproperty_ID).data))
+
     @classmethod
     def from_packed(cls, packed: bytes, subproperty_struct_classes: dict = {}):
         ID, size, subproperty_count = cls._struct.unpack(packed[:8])
@@ -151,6 +155,14 @@ class ScriptObject:
             tuple(connections),
             PropertyStruct.from_packed(packed[offset:], subproperty_struct_classes),
         )
+
+    def _set_fields_from_property_data(self, *field_tuples) -> None:
+        for field_name, property_ID, conversion in field_tuples:
+            object.__setattr__(
+                self,
+                field_name,
+                conversion(self.base_property_struct.get_subproperty_by_ID(property_ID).data),
+            )
 
     @property
     def packed_size(self) -> int:

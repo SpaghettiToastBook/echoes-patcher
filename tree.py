@@ -6,6 +6,7 @@ import dataclasses
 import struct
 
 from scly_common import Property, PropertyStruct, ScriptObject
+from util import unpack_bool, unpack_int, unpack_null_terminated_ascii
 
 __all__ = ("EditorProperties", "ScannableParameters", "SCND", "SCSN", "SCIN", "SCSL", "SCMN", "ScanTree")
 
@@ -30,45 +31,50 @@ class Vector:
         return self._struct.pack(self.x, self.y, self.z)
 
 
-@dataclasses.dataclass(frozen=True, init=False)
+@dataclasses.dataclass(frozen=True)
 class EditorProperties(PropertyStruct):
-    name: str
-    translation: Vector
-    rotation: Vector
-    translation: Vector
-    scale: Vector
-    active: bool
+    name: str = dataclasses.field(init=False)
+    translation: Vector = dataclasses.field(init=False)
+    rotation: Vector = dataclasses.field(init=False)
+    translation: Vector = dataclasses.field(init=False)
+    scale: Vector = dataclasses.field(init=False)
+    active: bool = dataclasses.field(init=False)
 
     def __post_init__(self):
         super().__post_init__()
 
-        object.__setattr__(
-            self,
-            "name",
-            self.get_subproperty_by_ID(0x494E414D).data[:-1].decode("ascii"),
+        self._set_fields_from_subproperty_data(
+            ("name",        0x494E414D, unpack_null_terminated_ascii),
+            ("translation", 0x5846524D, lambda data: Vector.from_packed(data[:12])),
+            ("rotation",    0x5846524D, lambda data: Vector.from_packed(data[12:24])),
+            ("scale",       0x5846524D, lambda data: Vector.from_packed(data[24:])),
+            ("active",      0x41435456, unpack_bool),
         )
-        object.__setattr__(
-            self,
-            "translation",
-            Vector.from_packed(self.get_subproperty_by_ID(0x5846524D).data[:12]),
-        )
-        object.__setattr__(
-            self,
-            "rotation",
-            Vector.from_packed(self.get_subproperty_by_ID(0x5846524D).data[12:24]),
-        )
-        object.__setattr__(
-            self,
-            "scale",
-            Vector.from_packed(self.get_subproperty_by_ID(0x5846524D).data[24:]),
-        )
-        object.__setattr__(self, "active", bool(self.get_subproperty_by_ID(0x41435456).data[0]))
 
+
+@dataclasses.dataclass(frozen=True)
 class ScannableParameters(PropertyStruct):
-    pass
+    SCAN_asset_ID: int = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        self._set_fields_from_subproperty_data(("SCAN_asset_ID", 0xB94E9BE7, unpack_int))
 
 
+@dataclasses.dataclass(frozen=True)
 class ScanTreeScriptObject(ScriptObject):
+    editor_properties: EditorProperties = dataclasses.field(init=False, repr=False)
+    name_string_STRG_asset_ID: int = dataclasses.field(init=False)
+    name_string_name: str = dataclasses.field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "editor_properties", self.base_property_struct.get_subproperty_by_ID(0x255A4580))
+        self._set_fields_from_property_data(
+            ("name_string_STRG_asset_ID", 0x46219BAC, unpack_int),
+            ("name_string_name",          0x32698BD6, unpack_null_terminated_ascii),
+        )
+
     @classmethod
     def from_packed(cls, packed: bytes):
         return super().from_packed(packed, {
@@ -76,59 +82,62 @@ class ScanTreeScriptObject(ScriptObject):
             0x2DA1EC33: ScannableParameters,
         })
 
-    @property
-    def editor_properties(self) -> EditorProperties:
-        return self.base_property_struct.get_subproperty_by_ID(0x255A4580)
 
-    @property
-    def name_string_STRG_asset_ID(self) -> int:
-        return struct.unpack(">I", self.base_property_struct.get_subproperty_by_ID(0x46219BAC).data)[0]
-
-    @property
-    def name_string_name(self) -> str:
-        return self.base_property_struct.get_subproperty_by_ID(0x32698BD6).data[:-1].decode("ascii")
-
-
+@dataclasses.dataclass(frozen=True)
 class SCND(ScanTreeScriptObject):
     pass
 
+
+@dataclasses.dataclass(frozen=True)
 class SCSN(ScanTreeScriptObject):
-    @property
-    def scannable_parameters(self) -> ScannableParameters:
-        return self.base_property_struct.get_subproperty_by_ID(0x2DA1EC33)
+    scannable_parameters: ScannableParameters = dataclasses.field(init=False, repr=False)
 
+    def __post_init__(self):
+        super().__post_init__()
+
+        object.__setattr__(self, "scannable_parameters", self.base_property_struct.get_subproperty_by_ID(0x2DA1EC33))
+
+
+@dataclasses.dataclass(frozen=True)
 class SCIN(ScanTreeScriptObject):
-    @property
-    def inventory_slot(self) -> bytes:
-        return self.base_property_struct.get_subproperty_by_ID(0x3D326F90).data
+    inventory_slot: int = dataclasses.field(init=False)
+    scannable_parameters: ScannableParameters = dataclasses.field(init=False, repr=False)
 
-    @property
-    def scannable_parameters(self) -> ScannableParameters:
-        return self.base_property_struct.get_subproperty_by_ID(0x2DA1EC33)
+    def __post_init__(self):
+        super().__post_init__()
 
+        self._set_fields_from_property_data(("inventory_slot", 0x3D326F90, unpack_int))
+        object.__setattr__(self, "scannable_parameters", self.base_property_struct.get_subproperty_by_ID(0x2DA1EC33))
+
+
+@dataclasses.dataclass(frozen=True)
 class SCSL(ScanTreeScriptObject):
-    pass
+    unknown: int = dataclasses.field(init=False)
 
+    def __post_init__(self):
+        super().__post_init__()
+
+        self._set_fields_from_property_data(("unknown", 0x0261A4E0, unpack_int))
+
+
+@dataclasses.dataclass(frozen=True)
 class SCMN(ScanTreeScriptObject):
-    @property
-    def menu_options_STRG_asset_ID(self) -> int:
-        return struct.unpack(">I", self.base_property_struct.get_subproperty_by_ID(0xA6A874E9).data)[0]
+    menu_options_STRG_asset_ID: int = dataclasses.field(init=False)
+    option_1_string_name: str = dataclasses.field(init=False)
+    option_2_string_name: str = dataclasses.field(init=False)
+    option_3_string_name: str = dataclasses.field(init=False)
+    option_4_string_name: str = dataclasses.field(init=False)
 
-    @property
-    def option_1_string_name(self) -> str:
-        return self.base_property_struct.get_subproperty_by_ID(0x30531924).data[:-1].decode("ascii")
+    def __post_init__(self):
+        super().__post_init__()
 
-    @property
-    def option_2_string_name(self) -> str:
-        return self.base_property_struct.get_subproperty_by_ID(0x01BB03B9).data[:-1].decode("ascii")
-
-    @property
-    def option_3_string_name(self) -> str:
-        return self.base_property_struct.get_subproperty_by_ID(0xA7CC080D).data[:-1].decode("ascii")
-
-    @property
-    def option_4_string_name(self) -> str:
-        return self.base_property_struct.get_subproperty_by_ID(0x626B3683).data[:-1].decode("ascii")
+        self._set_fields_from_property_data(
+            ("menu_options_STRG_asset_ID", 0xA6A874E9, unpack_int),
+            ("option_1_string_name", 0x30531924, unpack_null_terminated_ascii),
+            ("option_2_string_name", 0x01BB03B9, unpack_null_terminated_ascii),
+            ("option_3_string_name", 0xA7CC080D, unpack_null_terminated_ascii),
+            ("option_4_string_name", 0x626B3683, unpack_null_terminated_ascii),
+        )
 
 
 @dataclasses.dataclass(frozen=True)
