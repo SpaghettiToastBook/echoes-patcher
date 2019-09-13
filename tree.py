@@ -3,12 +3,23 @@
 # https://gist.github.com/Antidote/70bd02369598e5ceb1210faf61bf1467
 
 import dataclasses
+import enum
 import struct
 
 from scly_common import Property, PropertyStruct, ScriptObject
 from util import unpack_bool, unpack_int, unpack_null_terminated_ascii
 
-__all__ = ("EditorProperties", "ScannableParameters", "SCND", "SCSN", "SCIN", "SCSL", "SCMN", "ScanTree")
+__all__ = (
+    "EditorProperties",
+    "ScannableParameters",
+    "InventorySlot",
+    "SCND",
+    "SCSN",
+    "SCIN",
+    "SCSL",
+    "SCMN",
+    "ScanTree",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -62,6 +73,58 @@ class ScannableParameters(PropertyStruct):
         self._set_fields_from_subproperty_data(("SCAN_asset_ID", 0xB94E9BE7, unpack_int))
 
 
+class InventorySlot(enum.Enum):
+    POWER_BEAM = 0
+    DARK_BEAM = 1
+    LIGHT_BEAM = 2
+    ANNIHILATOR_BEAM = 3
+    SUPER_MISSILE = 4
+    DARKBURST = 5
+    SUNBURST = 6
+    SONIC_BOOM = 7
+    COMBAT_VISOR = 8
+    SCAN_VISOR = 9
+    DARK_VISOR = 10
+    ECHO_VISOR = 11
+    VARIA_SUIT = 12
+    DARK_SUIT = 13
+    LIGHT_SUIT = 14
+    MORPH_BALL = 15
+    BOOST_BALL = 16
+    SPIDER_BALL = 17
+    MORPH_BALL_BOMB = 18
+    CHARGE_BEAM = 22
+    GRAPPLE_BEAM = 23
+    SPACE_JUMP_BOOTS = 24
+    GRAVITY_BOOST = 25
+    SEEKER_LAUNCHER = 26
+    SCREW_ATTACK = 27
+    POWER_BOMB = 28
+    MISSILE_LAUNCHER = 29
+    BEAM_AMMO_EXPANSION = 30
+    ENERGY_TANK = 32
+    SKY_TEMPLE_KEY_1 = 33
+    SKY_TEMPLE_KEY_2 = 34
+    SKY_TEMPLE_KEY_3 = 35
+    SKY_TEMPLE_KEY_4 = 36
+    SKY_TEMPLE_KEY_5 = 37
+    SKY_TEMPLE_KEY_6 = 38
+    SKY_TEMPLE_KEY_7 = 39
+    SKY_TEMPLE_KEY_8 = 40
+    SKY_TEMPLE_KEY_9 = 41
+    DARK_AGON_KEY_1 = 42
+    DARK_AGON_KEY_2 = 43
+    DARK_AGON_KEY_3 = 44
+    DARK_TORVUS_KEY_1 = 45
+    DARK_TORVUS_KEY_2 = 46
+    DARK_TORVUS_KEY_3 = 47
+    ING_HIVE_KEY_1 = 48
+    ING_HIVE_KEY_2 = 49
+    ING_HIVE_KEY_3 = 50
+    ENERGY_TRANSFER_MODULE = 51
+    CHARGE_COMBO = 52
+
+
 @dataclasses.dataclass(frozen=True)
 class ScanTreeScriptObject(ScriptObject):
     editor_properties: EditorProperties = dataclasses.field(init=False, repr=False)
@@ -100,13 +163,15 @@ class SCSN(ScanTreeScriptObject):
 
 @dataclasses.dataclass(frozen=True)
 class SCIN(ScanTreeScriptObject):
-    inventory_slot: int = dataclasses.field(init=False)
+    inventory_slot: InventorySlot = dataclasses.field(init=False)
     scannable_parameters: ScannableParameters = dataclasses.field(init=False, repr=False)
 
     def __post_init__(self):
         super().__post_init__()
 
-        self._set_fields_from_property_data(("inventory_slot", 0x3D326F90, unpack_int))
+        self._set_fields_from_property_data(
+            ("inventory_slot", 0x3D326F90, lambda packed: InventorySlot(unpack_int(packed))),
+        )
         object.__setattr__(self, "scannable_parameters", self.base_property_struct.get_subproperty_by_ID(0x2DA1EC33))
 
 
