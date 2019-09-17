@@ -240,22 +240,13 @@ class ScanTree:
         return cls(magic.decode("ascii"), root_node_instance_ID, unknown, object_count, tuple(objects))
 
     @property
-    def packed_content_size(self) -> int:
-        return 4 + 4 + 1 + 4 + sum(object_.packed_size for object_ in self.objects)
-
-    @property
-    def packed_padding_size(self) -> int:
-        return (32 - (self.packed_content_size % 32)) % 32
-
-    @property
     def packed_size(self) -> int:
-        return self.packed_content_size + self.packed_padding_size
+        return 4 + 4 + 1 + 4 + sum(object_.packed_size for object_ in self.objects)
 
     def packed(self) -> bytes:
         return b"".join((
             self._struct.pack(self.magic.encode("ascii"), self.root_node_instance_ID, self.unknown, self.object_count),
             *(object_.packed() for object_ in self.objects),
-            b"\xff" * self.packed_padding_size,
         ))
 
     def with_object_replaced(self, index: int, new_object: ScanTreeScriptObject):

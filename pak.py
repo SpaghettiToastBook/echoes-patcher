@@ -81,6 +81,10 @@ class PAKUnimplementedResource:
         return self.data
 
 
+def aligned_to_32_bytes(bytes_to_align: bytes):
+    padding = ((32 - (len(bytes_to_align) % 32)) % 32) * b"\xff"
+    return bytes_to_align + padding
+
 @dataclasses.dataclass(frozen=True)
 class PAK:
     _struct = struct.Struct(">HHII")
@@ -146,7 +150,8 @@ class PAK:
 
     @property
     def packed_content_before_resources_size(self) -> int:
-        named_resource_tables_size = sum(named_resource_table.packed_size for named_resource_table in self.named_resource_tables)
+        named_resource_tables_size = \
+            sum(named_resource_table.packed_size for named_resource_table in self.named_resource_tables)
         resource_tables_size = sum(resource_table.packed_size for resource_table in self.resource_tables)
 
         return 2 + 2 + 4 + 4 + named_resource_tables_size + 4 + resource_tables_size
@@ -167,7 +172,7 @@ class PAK:
             struct.pack(">I", self.resource_count),
             *(resource_table.packed() for resource_table in self.resource_tables),
             b"\x00" * self.packed_padding_before_resources_size,
-            *(resource.packed() for resource in self.resources),
+            *(aligned_to_32_bytes(resource.packed()) for resource in self.resources),
         ))
 
     def get_resource_by_asset_ID(self, asset_ID: int):

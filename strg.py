@@ -183,19 +183,11 @@ class STRG:
         )
 
     @property
-    def packed_content_size(self) -> int:
+    def packed_size(self) -> int:
         language_tables_size = sum(language_table.packed_size for language_table in self.language_tables)
         string_tables_size = sum(string_table.packed_size for string_table in self.string_tables)
 
         return 4 + 4 + 4 + 4 + language_tables_size + self.name_table.packed_size + string_tables_size
-
-    @property
-    def packed_padding_size(self) -> int:
-        return (32 - (self.packed_content_size % 32)) % 32
-
-    @property
-    def packed_size(self) -> int:
-        return self.packed_content_size + self.packed_padding_size
 
     def packed(self) -> bytes:
         return b"".join((
@@ -203,7 +195,6 @@ class STRG:
             *(language_table.packed() for language_table in self.language_tables),
             self.name_table.packed(),
             *(string_table.packed() for string_table in self.string_tables),
-            b"\xff" * self.packed_padding_size,
         ))
 
     def get_string_table_by_language_ID(self, language_ID: str) -> STRGStringTable:
