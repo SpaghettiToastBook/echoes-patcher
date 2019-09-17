@@ -9,7 +9,7 @@ from strg import STRG
 from tree import ScanTree
 from util import unpack_int, unpack_ascii, pack_int, pack_ascii
 
-__all__ = ("PAKNamedResourcesTable", "PAKResourceTable", "PAKUnimplementedResource", "PAK")
+__all__ = ("NamedResourcesTable", "ResourceTable", "UnimplementedResource", "PAK")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -43,7 +43,7 @@ class PAKNamedResourceTable:
 
 
 @dataclasses.dataclass(frozen=True)
-class PAKResourceTable:
+class ResourceTable:
     _struct = struct.Struct(">I4sIII")
 
     compressed: bool
@@ -72,7 +72,7 @@ class PAKResourceTable:
 
 
 @dataclasses.dataclass(frozen=True)
-class PAKUnimplementedResource:
+class UnimplementedResource:
     data: bytes = dataclasses.field(repr=False)
 
     @classmethod
@@ -131,7 +131,7 @@ class PAK:
         offset += 4
         resource_tables = []
         for i in range(resource_count):
-            resource_tables.append(PAKResourceTable.from_packed(packed[offset:offset+20]))
+            resource_tables.append(ResourceTable.from_packed(packed[offset:offset+20]))
             offset += 20
 
         end_of_resource_tables_offset = offset
@@ -140,7 +140,7 @@ class PAK:
             if resource_table.asset_ID == 0x95B61279:
                 asset_class = ScanTree
             else:
-                asset_class = cls.asset_classes.get(resource_table.asset_type, PAKUnimplementedResource)
+                asset_class = cls.asset_classes.get(resource_table.asset_type, UnimplementedResource)
             offset, size = resource_table.offset, resource_table.size
             resources.append(asset_class.from_packed(packed[offset:offset+size]))
 
@@ -190,7 +190,7 @@ class PAK:
             new_resource_table_offset = self.resource_tables[-1].offset + self.resource_tables[-1].size
         else:
             new_resource_table_offset = self.resource_tables[index].offset
-        new_resource_table = PAKResourceTable(
+        new_resource_table = ResourceTable(
             False, # TODO: Support compressing resources
             new_resource.asset_type,
             asset_ID,

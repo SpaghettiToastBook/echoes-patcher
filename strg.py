@@ -6,11 +6,11 @@ import struct
 from util import unpack_ascii, unpack_null_terminated_ascii, unpack_null_terminated_utf_16, \
     pack_ascii, pack_null_terminated_ascii, pack_null_terminated_utf_16
 
-__all__ = ("STRGLanguageTable", "STRGNameEntry", "STRGNameTable", "STRGStringTable", "STRG")
+__all__ = ("LanguageTable", "NameEntry", "NameTable", "StringTable", "STRG")
 
 
 @dataclasses.dataclass(frozen=True)
-class STRGLanguageTable:
+class LanguageTable:
     _struct = struct.Struct(">4sII")
 
     language_ID: str
@@ -35,7 +35,7 @@ class STRGLanguageTable:
 
 
 @dataclasses.dataclass(frozen=True)
-class STRGNameEntry:
+class NameEntry:
     _struct = struct.Struct(">II")
 
     offset: int
@@ -54,7 +54,7 @@ class STRGNameEntry:
 
 
 @dataclasses.dataclass(frozen=True)
-class STRGNameTable:
+class NameTable:
     _struct = struct.Struct(">II")
 
     count: int
@@ -69,7 +69,7 @@ class STRGNameTable:
         offset = 8
         entries = []
         for i in range(count):
-            entries.append(STRGNameEntry.from_packed(packed[offset:offset+8]))
+            entries.append(NameEntry.from_packed(packed[offset:offset+8]))
             offset += 8
 
         names = []
@@ -96,7 +96,7 @@ class STRGNameTable:
 
 
 @dataclasses.dataclass(frozen=True)
-class STRGStringTable:
+class StringTable:
     count: int
     offsets: tuple
     strings: tuple
@@ -148,7 +148,7 @@ class STRG:
     language_count: int
     string_count: int
     language_tables: tuple = dataclasses.field(repr=False)
-    name_table: STRGNameTable = dataclasses.field(repr=False)
+    name_table: NameTable = dataclasses.field(repr=False)
     string_tables: tuple = dataclasses.field(repr=False)
 
     def __post_init__(self):
@@ -164,16 +164,16 @@ class STRG:
         offset = 16
         language_tables = []
         for i in range(language_count):
-            language_tables.append(STRGLanguageTable.from_packed(packed[offset:offset+12]))
+            language_tables.append(LanguageTable.from_packed(packed[offset:offset+12]))
             offset += 12
 
-        name_table = STRGNameTable.from_packed(packed[offset:])
+        name_table = NameTable.from_packed(packed[offset:])
         string_tables_offset = offset + 8 + name_table.size
 
         string_tables = []
         for language_table in language_tables:
             offset, size = string_tables_offset + language_table.strings_offset, language_table.strings_size
-            string_tables.append(STRGStringTable.from_packed(packed[offset:offset+size], string_count))
+            string_tables.append(StringTable.from_packed(packed[offset:offset+size], string_count))
 
         return cls(
             magic_number,
@@ -200,10 +200,10 @@ class STRG:
             *(string_table.packed() for string_table in self.string_tables),
         ))
 
-    def get_string_table_by_language_ID(self, language_ID: str) -> STRGStringTable:
+    def get_string_table_by_language_ID(self, language_ID: str) -> StringTable:
         return self.string_tables[self._language_ID_to_index_map[language_ID]]
 
-    def with_string_table_replaced(self, index: int, new_string_table: STRGStringTable):
+    def with_string_table_replaced(self, index: int, new_string_table: StringTable):
         old_language_table = self.language_tables[index]
         new_language_table = dataclasses.replace(old_language_table, strings_size=new_string_table.packed_size)
 
@@ -220,6 +220,6 @@ class STRG:
             string_tables=(*self.string_tables[:index], new_string_table, *self.string_tables[index+1:]),
         )
 
-    def with_string_table_replaced_by_language_ID(self, language_ID: str, new_string_table: STRGStringTable):
+    def with_string_table_replaced_by_language_ID(self, language_ID: str, new_string_table: StringTable):
         index = self._language_ID_to_index_map[language_ID]
         return self.with_string_table_replaced(index, new_string_table)
