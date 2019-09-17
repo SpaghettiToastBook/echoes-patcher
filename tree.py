@@ -7,7 +7,7 @@ import enum
 import struct
 
 from scly_common import Property, PropertyStruct, ScriptObject
-from util import unpack_bool, unpack_int, unpack_null_terminated_ascii
+from util import unpack_bool, unpack_int, unpack_ascii, unpack_null_terminated_ascii, pack_ascii
 
 __all__ = (
     "EditorProperties",
