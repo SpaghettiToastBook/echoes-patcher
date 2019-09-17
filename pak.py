@@ -9,11 +9,11 @@ from strg import STRG
 from tree import ScanTree
 from util import unpack_int, unpack_ascii, pack_int, pack_ascii
 
-__all__ = ("NamedResourcesTable", "ResourceTable", "UnimplementedResource", "PAK")
+__all__ = ("NamedResourceTable", "ResourceTable", "UnimplementedResource", "PAK")
 
 
 @dataclasses.dataclass(frozen=True)
-class PAKNamedResourceTable:
+class NamedResourceTable:
     _struct = struct.Struct(">4sII")
 
     asset_type: str
@@ -123,7 +123,7 @@ class PAK:
         offset = 12
         named_resource_tables = []
         for i in range(named_resource_count):
-            table = PAKNamedResourceTable.from_packed(packed[offset:])
+            table = NamedResourceTable.from_packed(packed[offset:])
             named_resource_tables.append(table)
             offset += 12 + table.name_length
 
