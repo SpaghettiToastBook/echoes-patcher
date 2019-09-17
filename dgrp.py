@@ -10,18 +10,18 @@ __all__ = ("DGRP",)
 
 @dataclasses.dataclass(frozen=True)
 class Dependency:
-    _struct = struct.Struct(">I4s")
+    _struct = struct.Struct(">4sI")
 
-    asset_ID: int
     asset_type: str
+    asset_ID: int
 
     @classmethod
     def from_packed(cls, packed: bytes):
-        asset_ID, asset_type_bytes = cls._struct.unpack(packed)
-        return cls(asset_ID, unpack_ascii(asset_type_bytes))
+        asset_type_bytes, asset_ID = cls._struct.unpack(packed)
+        return cls(unpack_ascii(asset_type_bytes), asset_ID)
 
     def packed(self) -> bytes:
-        return self._struct.pack(self.asset_ID, pack_ascii(self.asset_type))
+        return self._struct.pack(pack_ascii(self.asset_type), self.asset_ID)
 
 
 @dataclasses.dataclass(frozen=True)
