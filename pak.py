@@ -3,6 +3,7 @@
 import dataclasses
 import struct
 
+from dgrp import DGRP
 from dumb import DUMB
 from strg import STRG
 from tree import ScanTree
@@ -104,6 +105,7 @@ class PAK:
     resources: tuple = dataclasses.field(repr=False)
 
     asset_classes = {
+        "DGRP": DGRP,
         "DUMB": DUMB,
         "STRG": STRG,
     }
