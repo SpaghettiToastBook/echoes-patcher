@@ -231,13 +231,13 @@ class ScanTree:
         offset = 13
         objects = []
         for i in range(object_count):
-            object_type = struct.unpack(">4s", packed[offset:offset+4])[0].decode("ascii")
+            object_type = unpack_ascii(packed[offset:offset+4])
             object_ = cls._script_object_classes[object_type].from_packed(packed[offset:])
 
             objects.append(object_)
             offset += object_.packed_size
 
-        return cls(magic.decode("ascii"), root_node_instance_ID, unknown, object_count, tuple(objects))
+        return cls(unpack_ascii(magic), root_node_instance_ID, unknown, object_count, tuple(objects))
 
     @property
     def packed_size(self) -> int:
@@ -245,7 +245,7 @@ class ScanTree:
 
     def packed(self) -> bytes:
         return b"".join((
-            self._struct.pack(self.magic.encode("ascii"), self.root_node_instance_ID, self.unknown, self.object_count),
+            self._struct.pack(pack_ascii(self.magic), self.root_node_instance_ID, self.unknown, self.object_count),
             *(object_.packed() for object_ in self.objects),
         ))
 

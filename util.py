@@ -7,9 +7,11 @@ __all__ = (
     "unpack_int",
     "unpack_ascii",
     "unpack_null_terminated_ascii",
+    "unpack_null_terminated_utf_16",
     "pack_int",
     "pack_ascii",
     "pack_null_terminated_ascii",
+    "pack_null_terminated_utf_16",
 )
 
 BOOL_STRUCT = struct.Struct(">?")
@@ -32,6 +34,9 @@ def unpack_ascii(packed: bytes):
 def unpack_null_terminated_ascii(packed: bytes) -> str:
     return packed[:-1].decode("ascii")
 
+def unpack_null_terminated_utf_16(packed: bytes) -> str:
+    return packed[:-2].decode("utf-16-be")
+
 
 # Packing
 def pack_int(integer: int) -> bytes:
@@ -42,3 +47,6 @@ def pack_ascii(string: str) -> bytes:
 
 def pack_null_terminated_ascii(string: str) -> bytes:
     return string.encode("ascii") + b"\x00"
+
+def pack_null_terminated_utf_16(string: str) -> bytes:
+    return string.encode("utf-16-be") + b"\x00\x00"

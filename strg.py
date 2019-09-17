@@ -3,6 +3,9 @@
 import dataclasses
 import struct
 
+from util import unpack_ascii, unpack_null_terminated_ascii, unpack_null_terminated_utf_16, \
+    pack_ascii, pack_null_terminated_ascii, pack_null_terminated_utf_16
+
 __all__ = ("STRGLanguageTable", "STRGNameEntry", "STRGNameTable", "STRGStringTable", "STRG")
 
 
@@ -17,7 +20,7 @@ class STRGLanguageTable:
     @classmethod
     def from_packed(cls, packed: bytes):
         language_ID_bytes, strings_offset, strings_size = cls._struct.unpack(packed)
-        return cls(language_ID_bytes.decode("ascii"), strings_offset, strings_size)
+        return cls(unpack_ascii(language_ID_bytes), strings_offset, strings_size)
 
     @property
     def packed_size(self) -> int:
@@ -25,7 +28,7 @@ class STRGLanguageTable:
 
     def packed(self) -> bytes:
         return self._struct.pack(
-            self.language_ID.encode("ascii"),
+            pack_ascii(self.language_ID),
             self.strings_offset,
             self.strings_size,
         )
@@ -73,8 +76,7 @@ class STRGNameTable:
         for entry in entries:
             offset = 8 + entry.offset
             name_length = packed[offset:].index(b"\x00")
-            name = struct.unpack(f"{name_length}sx", packed[offset:offset+name_length+1])[0]
-            names.append(name.decode("ascii"))
+            names.append(unpack_null_terminated_ascii(packed[offset:offset+name_length+1]))
 
         return cls(count, size, tuple(entries), tuple(names))
 
@@ -86,7 +88,7 @@ class STRGNameTable:
         return b"".join((
             self._struct.pack(self.count, self.size),
             *(entry.packed() for entry in self.entries),
-            *(name.encode("ascii") + b"\x00" for name in self.names),
+            *(pack_null_terminated_ascii(name) for name in self.names),
         ))
 
     def get_string_index_for_name(self, name: str):
@@ -101,15 +103,14 @@ class STRGStringTable:
 
     @classmethod
     def from_packed(cls, packed: bytes, string_count: int):
-        string_offsets = list(struct.unpack(f">{string_count}I", packed[:4*string_count]))
+        string_offsets = struct.unpack(f">{string_count}I", packed[:4*string_count])
 
         strings = []
         for offset in string_offsets:
             string_length = packed[offset:].index(b"\x00\x00")
-            string_bytes = struct.unpack(f">{string_length}sxx", packed[offset:offset+string_length+2])[0]
-            strings.append(string_bytes.decode("utf-16_be"))
+            strings.append(unpack_null_terminated_utf_16(packed[offset:offset+string_length+2]))
 
-        return cls(string_count, tuple(string_offsets), tuple(strings))
+        return cls(string_count, string_offsets, tuple(strings))
 
     @property
     def packed_size(self) -> int:
@@ -118,12 +119,14 @@ class STRGStringTable:
     def packed(self) -> bytes:
         return b"".join((
             struct.pack(f">{self.count}I", *self.offsets),
-            *(string.encode("utf-16_be") + b"\x00\x00" for _, string in sorted(zip(self.offsets, self.strings))),
+            *(pack_null_terminated_utf_16(string) for _, string in sorted(zip(self.offsets, self.strings))),
         ))
 
     def with_string_replaced(self, index: int, new_string: str):
+        size_diff = \
+            len(pack_null_terminated_utf_16(new_string)) - len(pack_null_terminated_utf_16(self.strings[index]))
+
         new_offsets = list(self.offsets[:index+1])
-        size_diff = len(new_string.encode("utf-16_be")) - len(self.strings[index].encode("utf-16_be"))
         for offset in self.offsets[index+1:]:
             new_offsets.append(offset+size_diff)
 

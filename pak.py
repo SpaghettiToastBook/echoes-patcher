@@ -6,6 +6,7 @@ import struct
 from dumb import DUMB
 from strg import STRG
 from tree import ScanTree
+from util import unpack_int, unpack_ascii, pack_int, pack_ascii
 
 __all__ = ("PAKNamedResourcesTable", "PAKResourceTable", "PAKUnimplementedResource", "PAK")
 
@@ -22,8 +23,12 @@ class PAKNamedResourceTable:
     @classmethod
     def from_packed(cls, packed: bytes):
         asset_type_bytes, asset_ID, name_length = cls._struct.unpack(packed[:12])
-        name = struct.unpack(f"{name_length}s", packed[12:12+name_length])[0].decode("ascii")
-        return cls(asset_type_bytes.decode("ascii"), asset_ID, name_length, name)
+        return cls(
+            unpack_ascii(asset_type_bytes),
+            asset_ID,
+            name_length,
+            unpack_ascii(packed[12:12+name_length]),
+        )
 
     @property
     def packed_size(self) -> int:
@@ -31,8 +36,8 @@ class PAKNamedResourceTable:
 
     def packed(self) -> bytes:
         return b"".join((
-            self._struct.pack(self.asset_type.encode("ascii"), self.asset_ID, self.name_length),
-            self.name.encode("ascii")
+            self._struct.pack(pack_ascii(self.asset_type), self.asset_ID, self.name_length),
+            pack_ascii(self.name),
         ))
 
 
@@ -49,7 +54,7 @@ class PAKResourceTable:
     @classmethod
     def from_packed(cls, packed: bytes):
         compressed_int, asset_type_bytes, asset_ID, size, offset = cls._struct.unpack(packed)
-        return cls(bool(compressed_int), asset_type_bytes.decode("ascii"), asset_ID, size, offset)
+        return cls(bool(compressed_int), unpack_ascii(asset_type_bytes), asset_ID, size, offset)
 
     @property
     def packed_size(self) -> int:
@@ -58,7 +63,7 @@ class PAKResourceTable:
     def packed(self) -> bytes:
         return self._struct.pack(
             int(self.compressed),
-            self.asset_type.encode("ascii"),
+            pack_ascii(self.asset_type),
             self.asset_ID,
             self.size,
             self.offset,
@@ -120,7 +125,7 @@ class PAK:
             named_resource_tables.append(table)
             offset += 12 + table.name_length
 
-        resource_count = struct.unpack(">I", packed[offset:offset+4])[0]
+        resource_count = unpack_int(packed[offset:offset+4])
         offset += 4
         resource_tables = []
         for i in range(resource_count):
@@ -169,7 +174,7 @@ class PAK:
         return b"".join((
             self._struct.pack(self.major_version, self.minor_version, self.unused, self.named_resource_count),
             *(named_resource_table.packed() for named_resource_table in self.named_resource_tables),
-            struct.pack(">I", self.resource_count),
+            pack_int(self.resource_count),
             *(resource_table.packed() for resource_table in self.resource_tables),
             b"\x00" * self.packed_padding_before_resources_size,
             *(aligned_to_32_bytes(resource.packed()) for resource in self.resources),

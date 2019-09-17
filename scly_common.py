@@ -3,6 +3,8 @@
 import dataclasses
 import struct
 
+from util import unpack_ascii, pack_ascii
+
 __all__ = ("Connection", "Property", "PropertyStruct", "ScriptObject")
 
 
@@ -18,8 +20,8 @@ class Connection:
     def from_packed(cls, packed: bytes):
         state_bytes, message_bytes, target_instance_ID = cls._struct.unpack(packed)
         return cls(
-            state_bytes.decode("ascii"),
-            message_bytes.decode("ascii"),
+            unpack_ascii(state_bytes),
+            unpack_ascii(message_bytes),
             target_instance_ID,
         )
 
@@ -29,8 +31,8 @@ class Connection:
 
     def packed(self) -> bytes:
         return self._struct.pack(
-            self.state.encode("ascii"),
-            self.message.encode("ascii"),
+            pack_ascii(self.state),
+            pack_ascii(self.message),
             self.target_instance_ID,
         )
 
@@ -139,7 +141,7 @@ class ScriptObject:
     @classmethod
     def from_packed(cls, packed: bytes, subproperty_struct_classes: dict = {}):
         instance_type_bytes, instance_size, instance_ID, connection_count = cls._struct.unpack(packed[:12])
-        instance_type = instance_type_bytes.decode("ascii")
+        instance_type = unpack_ascii(instance_type_bytes)
 
         offset = 12
         connections = []
@@ -171,7 +173,7 @@ class ScriptObject:
     def packed(self) -> bytes:
         return b"".join((
             self._struct.pack(
-                self.instance_type.encode("ascii"),
+                pack_ascii(self.instance_type),
                 self.instance_size,
                 self.instance_ID,
                 self.connection_count
