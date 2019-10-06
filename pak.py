@@ -5,6 +5,7 @@ import struct
 
 from dgrp import DGRP
 from dumb import DUMB
+from hint import HINT
 from scan import SCAN
 from strg import STRG
 from tree import ScanTree
@@ -108,6 +109,7 @@ class PAK:
     asset_classes = {
         "DGRP": DGRP,
         "DUMB": DUMB,
+        "HINT": HINT,
         "SCAN": SCAN,
         "STRG": STRG,
     }
