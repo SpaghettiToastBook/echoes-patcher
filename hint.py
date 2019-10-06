@@ -114,3 +114,7 @@ class HINT:
             self._struct.pack(self.magic, self.version, self.hint_count),
             *(hint.packed() for hint in self.hints),
         )
+
+    def with_hints_replaced(self, new_hints):
+        new_hints = tuple(new_hints)
+        return dataclasses.replace(self, hint_count=len(new_hints), hints=new_hints)
