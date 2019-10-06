@@ -1,3 +1,4 @@
+import dataclasses
 import functools
 import struct
 
@@ -5,6 +6,7 @@ __all__ = (
     "unpack_bool",
     "unpack_bool_from_int",
     "unpack_int",
+    "unpack_float",
     "unpack_ascii",
     "unpack_null_terminated_ascii",
     "unpack_null_terminated_utf_16",
@@ -15,8 +17,9 @@ __all__ = (
     "Vector",
 )
 
-BOOL_STRUCT = struct.Struct(">?")
-INT_STRUCT  = struct.Struct(">I")
+BOOL_STRUCT  = struct.Struct(">?")
+INT_STRUCT   = struct.Struct(">I")
+FLOAT_STRUCT = struct.Struct(">f")
 
 
 # Unpacking
@@ -28,6 +31,9 @@ def unpack_bool_from_int(packed: bytes) -> bool:
 
 def unpack_int(packed: bytes) -> int:
     return INT_STRUCT.unpack(packed)[0]
+
+def unpack_float(packed: bytes) -> float:
+    return FLOAT_STRUCT.unpack(packed)[0]
 
 def unpack_ascii(packed: bytes):
     return packed.decode("ascii")
