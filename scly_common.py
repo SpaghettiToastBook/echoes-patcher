@@ -136,7 +136,7 @@ class ScriptObject:
     instance_ID: int
     connection_count: int
     connections: tuple
-    base_property_struct: PropertyStruct
+    base_property_struct: PropertyStruct = dataclasses.field(repr=False)
 
     @classmethod
     def from_packed(cls, packed: bytes, subproperty_struct_classes: dict = {}):
