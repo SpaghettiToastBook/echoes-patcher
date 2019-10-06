@@ -12,6 +12,7 @@ __all__ = (
     "pack_ascii",
     "pack_null_terminated_ascii",
     "pack_null_terminated_utf_16",
+    "Vector",
 )
 
 BOOL_STRUCT = struct.Struct(">?")
@@ -50,3 +51,24 @@ def pack_null_terminated_ascii(string: str) -> bytes:
 
 def pack_null_terminated_utf_16(string: str) -> bytes:
     return string.encode("utf-16-be") + b"\x00\x00"
+
+
+# Data types
+@dataclasses.dataclass(frozen=True)
+class Vector:
+    _struct = struct.Struct(">fff")
+
+    x: float
+    y: float
+    z: float
+
+    @classmethod
+    def from_packed(cls, packed: bytes):
+        return cls(*cls._struct.unpack(packed))
+
+    @property
+    def packed_size(self) -> int:
+        return len(self.packed())
+
+    def packed(self) -> bytes:
+        return self._struct.pack(self.x, self.y, self.z)

@@ -7,7 +7,7 @@ import enum
 import struct
 
 from scly_common import Property, PropertyStruct, ScriptObject
-from util import unpack_bool, unpack_int, unpack_ascii, unpack_null_terminated_ascii, pack_ascii
+from util import unpack_bool, unpack_int, unpack_ascii, unpack_null_terminated_ascii, pack_ascii, Vector
 
 __all__ = (
     "EditorProperties",
@@ -20,26 +20,6 @@ __all__ = (
     "SCMN",
     "ScanTree",
 )
-
-
-@dataclasses.dataclass(frozen=True)
-class Vector:
-    _struct = struct.Struct(">fff")
-
-    x: float
-    y: float
-    z: float
-
-    @classmethod
-    def from_packed(cls, packed: bytes):
-        return cls(*cls._struct.unpack(packed))
-
-    @property
-    def packed_size(self) -> int:
-        return len(self.packed())
-
-    def packed(self) -> bytes:
-        return self._struct.pack(self.x, self.y, self.z)
 
 
 @dataclasses.dataclass(frozen=True)
