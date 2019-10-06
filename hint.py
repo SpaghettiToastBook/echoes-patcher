@@ -36,13 +36,13 @@ class HintLocation:
 
 @dataclasses.dataclass(frozen=True)
 class Hint:
-    _struct = struct.Struct(">ffIfI")
+    _struct = struct.Struct(">ffIII")
 
     name: str
     immediate_time: float
     normal_time: float
     text_STRG_asset_ID: int
-    text_time: float
+    page_count: int
     location_count: int
     locations: tuple = dataclasses.field(repr=False)
 
@@ -52,7 +52,7 @@ class Hint:
         name = unpack_null_terminated_ascii(packed[:offset])
 
         immediate_time, normal_time, text_STRG_asset_ID, \
-            text_time, location_count = cls._struct.unpack(packed[offset:offset+20])
+            page_count, location_count = cls._struct.unpack(packed[offset:offset+20])
         offset += 20
 
         return cls(
@@ -60,7 +60,7 @@ class Hint:
             immediate_time,
             normal_time,
             text_STRG_asset_ID,
-            text_time,
+            page_count,
             location_count,
             tuple(HintLocation.from_packed(packed[offset + 16*i:offset + 16*(i+1)]) for i in range(location_count)),
         )
@@ -76,7 +76,7 @@ class Hint:
                 self.immediate_time,
                 self.normal_time,
                 self.text_STRG_asset_ID,
-                self.text_time,
+                self.page_count,
                 self.location_count,
             ),
             *(location.packed() for location in self.locations),
