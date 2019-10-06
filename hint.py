@@ -1,11 +1,11 @@
-# Source: http://www.metroid2002.com/retromodding/wiki/DGRP_(File_Format)
+# Source: http://www.metroid2002.com/retromodding/wiki/HINT_(File_Format)
 
 import dataclasses
 import struct
 
 from util import unpack_null_terminated_ascii, pack_null_terminated_ascii
 
-__all__ = ("HintLocation", "HINT")
+__all__ = ("HintLocation", "Hint", "HINT")
 
 
 @dataclasses.dataclass(frozen=True)
